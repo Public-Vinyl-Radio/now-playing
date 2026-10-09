@@ -106,7 +106,7 @@ async function main() {
       task.agentName = name;
       writeState(worktree, "task", task);
       run("herdr", ["agent", "start", name, "--kind", agent, "--pane", agentPaneId]);
-      run("herdr", ["agent", "prompt", name, "--", prompt]);
+      run("herdr", ["agent", "prompt", name, prompt]);
       console.log(`Submitted the prompt to ${name} (${agent}).`);
     } else console.log("The task pane is ready for manual work.");
   } catch (error) {
