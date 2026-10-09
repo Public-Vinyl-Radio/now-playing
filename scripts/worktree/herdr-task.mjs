@@ -65,7 +65,7 @@ async function main() {
   }
   if (prompt) run(agent, ["--version"]);
   // Check the CLI before creating any workspace.
-  run("herdr", ["worktree"]);
+  run("herdr", ["worktree", "--help"]);
   const created = api(["worktree", "create", "--cwd", root, "--branch", branch, "--base", baseCommit, "--label", branch, focus ? "--focus" : "--no-focus"]);
   const path = created.worktree?.path;
   const workspaceId = created.workspace?.workspace_id ?? created.root_pane?.workspace_id;
@@ -84,7 +84,7 @@ async function main() {
       if (!task.previewPaneId) fail("Preview tab returned no pane ID");
       task.port = port;
       writeState(worktree, "task", task);
-      api(["pane", "run", task.previewPaneId, `node ${shellQuote(join(worktree, "scripts/worktree/preview.mjs"))} --task-id ${shellQuote(task.id)}`]);
+      run("herdr", ["pane", "run", task.previewPaneId, `node ${shellQuote(join(worktree, "scripts/worktree/preview.mjs"))} --task-id ${shellQuote(task.id)}`]);
       const deadline = Date.now() + 120_000;
       let ready;
       while (Date.now() < deadline) {
@@ -103,14 +103,15 @@ async function main() {
       const suffix = createHash("sha256").update(worktree).digest("hex").slice(0, 6);
       const slug = branch.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 20);
       const name = `pvr-${slug}-${suffix}`;
-      api(["agent", "start", name, "--kind", agent, "--pane", agentPaneId]);
       task.agentName = name;
       writeState(worktree, "task", task);
-      api(["agent", "prompt", name, "--", prompt]);
+      run("herdr", ["agent", "start", name, "--kind", agent, "--pane", agentPaneId]);
+      run("herdr", ["agent", "prompt", name, "--", prompt]);
       console.log(`Submitted the prompt to ${name} (${agent}).`);
     } else console.log("The task pane is ready for manual work.");
   } catch (error) {
     console.error(`Task retained for inspection: ${workspaceId} (${worktree}).`);
+    if (task.agentName) console.error(`Inspect agent ${task.agentName} before retrying a prompt.`);
     throw error;
   }
 }
