@@ -44,7 +44,9 @@ export class HomeAssistantBridge {
 
   private publish() {
     const a = this.player?.attributes;
-    const artwork = this.artwork.register(a?.entity_picture ?? a?.entity_picture_local);
+    // HA's local proxy works even when the original cover host is not allowed.
+    const artwork = this.artwork.register(a?.entity_picture_local)
+      ?? this.artwork.register(a?.entity_picture);
     this.emit({ mode: "homeassistant", connection: "connected", nowPlaying: normalizeHA(this.player, this.sensor, artwork), receivedAt: Date.now() });
   }
 

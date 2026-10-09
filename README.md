@@ -84,7 +84,7 @@ Track identity excludes position updates, artwork refreshes, and connection chan
 
 ### Artwork
 
-Relative `entity_picture` URLs resolve against the HA base URL. `/api/artwork` serves only artwork registered from the configured player, using opaque keys rather than accepting arbitrary URLs. HA-origin requests use the server token. Redirects are checked at every hop, and external origins never receive HA credentials.
+Artwork prefers Home Assistant's `entity_picture_local` proxy, falling back to `entity_picture` when the local URL is absent or not permitted. Relative URLs resolve against the HA base URL. This supports Groovenet covers hosted externally without adding their original hosts to the allowlist when HA supplies a local proxy. `/api/artwork` serves only artwork registered from the configured player, using opaque keys rather than accepting arbitrary URLs. HA-origin requests use the server token. Redirects are checked at every hop, and external origins never receive HA credentials.
 
 External artwork is allowed only from HTTPS origins explicitly listed in `HA_ARTWORK_ORIGINS`, separated by commas. Leave this empty initially; add an origin if your integration returns covers from a separate image host. The proxy accepts common raster image types, limits responses to 8 MB, applies a timeout, and caches up to four recent covers. Failed or missing artwork uses the station sleeve. Texture swaps discard outdated async loads and dispose old GPU textures.
 
