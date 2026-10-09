@@ -130,7 +130,9 @@ export class AnalogDisplay {
     this.bloomSprite.width = bloomWidth;
     this.bloomSprite.height = bloomHeight;
     this.bloomSprite.filters = [this.bloomExtract!, this.blur!];
-    this.bloomSprite.filterArea = new Rectangle(0, 0, bloomWidth, bloomHeight);
+    // Pixi transforms filterArea with the sprite's scale. Use picture-space
+    // bounds so the quarter-size bloom pass covers the whole broadcast.
+    this.bloomSprite.filterArea = new Rectangle(0, 0, this.width, this.height);
     this.crt.resources.uBloom = this.glow.source;
     this.crt.resources.crtUniforms.uniforms.uResolution = new Float32Array([this.width * resolution, this.height * resolution]);
     this.output = new Sprite(this.picture);
