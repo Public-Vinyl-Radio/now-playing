@@ -1,0 +1,32 @@
+{
+  "name": "pvr-analog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "dev:ha": "op run --env-file .env.1password -- next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "node scripts/start.mjs",
+    "start:ha": "op run --env-file .env.1password -- node scripts/start.mjs",
+    "inspect:ha": "op run --env-file .env.1password -- node scripts/inspect-ha.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --conditions=react-server --experimental-strip-types --test src/lib/*.test.ts src/server/*.test.ts"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "pixi.js": "^8.14.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

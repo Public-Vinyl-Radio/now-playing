@@ -1,0 +1,11 @@
+# Optional override when Caddy runs in Docker on an existing shared network.
+# Set CADDY_NETWORK to the Docker network your Caddy container already joins.
+services:
+  now-playing:
+    networks:
+      - caddy
+
+networks:
+  caddy:
+    external: true
+    name: ${CADDY_NETWORK:-proxy}

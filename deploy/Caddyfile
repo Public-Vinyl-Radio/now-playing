@@ -1,0 +1,8 @@
+# For Caddy running directly on the Beelink host.
+now-playing.home.arpa {
+    tls internal
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3010 {
+        flush_interval -1
+    }
+}

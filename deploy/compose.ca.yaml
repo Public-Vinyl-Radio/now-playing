@@ -1,0 +1,7 @@
+# Mount Caddy's public root certificate when the container needs to trust ha.home.arpa.
+services:
+  now-playing:
+    environment:
+      NODE_EXTRA_CA_CERTS: /app/certs/caddy-root.crt
+    volumes:
+      - ${CADDY_ROOT_CERT:?Set CADDY_ROOT_CERT to the public root certificate path}:/app/certs/caddy-root.crt:ro
