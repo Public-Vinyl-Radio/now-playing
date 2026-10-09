@@ -16,7 +16,7 @@ export function useBroadcast(input: "live" | "mock", preview: number): Broadcast
     const connect = () => {
       events?.close();
       if (disposed || document.hidden) return;
-      const url = input === "mock" ? `/api/events?mode=mock&preview=${preview}` : "/api/events";
+      const url = input === "mock" ? `/api/events?mode=mock&preview=${preview}` : `/api/events?preview=${preview}`;
       events = new EventSource(url);
       events.addEventListener("broadcast", (event) => {
         if (disposed) return;

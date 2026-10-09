@@ -40,6 +40,7 @@ export class AnalogDisplay {
   private statFrames = 0;
   private nextGlitch = Infinity;
   private glitchStart = -Infinity;
+  private reducedMotion?: MediaQueryList;
 
   constructor(private host: HTMLElement, private preferences: VisualPreferences, private track: NowPlaying, private callbacks: DisplayCallbacks) {}
 
@@ -71,6 +72,9 @@ export class AnalogDisplay {
     if (this.disposed) return;
     this.scene = new NowPlayingScene(this.track, this.artwork, this.logo);
     this.scene.setBroadcastLabel(this.broadcastLabel);
+    this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    this.reducedMotion.addEventListener("change", this.titleMotionChanged);
+    this.updateTitleMotion();
     this.bloomExtract = new Filter({ glProgram: GlProgram.from({ vertex: FILTER_VERTEX, fragment: BLOOM_FRAGMENT, name: "pvr-bright-pass" }), padding: 0 });
     this.blur = new BlurFilter({ strength: 2.4, quality: 2, kernelSize: 5 });
     this.crt = new Filter({
@@ -145,6 +149,7 @@ export class AnalogDisplay {
     const resize = preferences.renderScale !== this.preferences.renderScale;
     const frequencyChanged = preferences.glitches !== this.preferences.glitches;
     this.preferences = preferences;
+    this.updateTitleMotion();
     if (!this.crt) return;
     const u = this.crt.resources.crtUniforms.uniforms;
     u.uCurvature = preferences.curvature;
@@ -159,6 +164,15 @@ export class AnalogDisplay {
     this.draw(performance.now());
     this.start();
   }
+
+  private updateTitleMotion() {
+    this.scene?.setTitleMotion(this.preferences.motion && !this.reducedMotion?.matches, this.width, this.height);
+  }
+
+  private titleMotionChanged = () => {
+    this.updateTitleMotion();
+    this.draw(performance.now());
+  };
 
   setTrack(track: NowPlaying, broadcastLabel = this.broadcastLabel) {
     const previous = this.track;
@@ -246,6 +260,7 @@ export class AnalogDisplay {
     this.stop();
     this.observer?.disconnect();
     document.removeEventListener("visibilitychange", this.visibilityChanged);
+    this.reducedMotion?.removeEventListener("change", this.titleMotionChanged);
     if (this.initialized) {
       this.app.canvas.removeEventListener("webglcontextlost", this.contextLost);
       this.app.canvas.removeEventListener("webglcontextrestored", this.contextRestored);
