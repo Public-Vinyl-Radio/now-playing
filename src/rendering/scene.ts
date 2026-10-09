@@ -8,6 +8,8 @@ const C = { background: 0x121511, ivory: 0xf0e7ce, muted: 0x969b85, amber: 0xd9a
 export class NowPlayingScene {
   readonly container = new Container();
   private signalGraphic?: Graphics;
+  private indicatorGraphic?: Graphics;
+  private indicatorGlow?: Graphics;
   private progressGraphic?: Graphics;
   private elapsedText?: Text;
   private clockText?: Text;
@@ -99,7 +101,18 @@ export class NowPlayingScene {
     const onAirX = width - safe;
     const indicator = { playing: "ON AIR", paused: "PAUSED", idle: "STANDBY", unavailable: "UNAVAILABLE", disconnected: "NO SIGNAL" }[this.track.state];
     const indicatorText = this.text(indicator, onAirX, top + 9 * s, 18 * s, { color: this.track.state === "playing" ? C.amber : C.muted, spacing: 2 * s, align: "right" });
-    graphics.circle(onAirX - indicatorText.width - 18 * s, top + 22 * s, 4 * s).fill(this.track.state === "playing" ? C.amber : C.rule);
+    const indicatorX = onAirX - indicatorText.width - 18 * s;
+    const indicatorY = top + 22 * s;
+    const indicatorRadius = (this.track.state === "playing" ? 5 : 4) * s;
+    this.indicatorGlow = new Graphics()
+      .circle(indicatorX, indicatorY, indicatorRadius * 2.5).fill({ color: C.amber, alpha: 0.06 })
+      .circle(indicatorX, indicatorY, indicatorRadius * 1.75).fill({ color: C.amber, alpha: 0.12 })
+      .circle(indicatorX, indicatorY, indicatorRadius * 1.375).fill({ color: C.amber, alpha: 0.2 });
+    this.container.addChild(this.indicatorGlow);
+    this.indicatorGraphic = new Graphics()
+      .circle(indicatorX, indicatorY, indicatorRadius)
+      .fill(this.track.state === "playing" ? C.amber : C.rule);
+    this.container.addChild(this.indicatorGraphic);
     const headerY = top + 87 * s;
     graphics.moveTo(safe, headerY).lineTo(width - safe, headerY).stroke({ color: C.rule, width: s });
 
@@ -248,6 +261,12 @@ export class NowPlayingScene {
   }
 
   update(time: number, now: number) {
+    // Use the picture's animation time (zero for a still picture), keeping the
+    // dot visible and the label steady through the existing CRT/bloom passes.
+    const pulsing = this.track.state === "playing" && time > 0;
+    const pulse = pulsing ? (1 + Math.cos(time * Math.PI * 2 / 3)) / 2 : 1;
+    if (this.indicatorGraphic) this.indicatorGraphic.alpha = pulsing ? 0.55 + 0.45 * pulse : 1;
+    if (this.indicatorGlow) this.indicatorGlow.alpha = pulsing ? pulse : 0;
     if (this.titleMarquee) {
       const marquee = this.titleMarquee;
       if (time <= 0) marquee.startedAt = undefined;
