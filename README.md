@@ -26,6 +26,21 @@ The start script copies the bundled assets into Next.js's standalone output and 
 
 With no Home Assistant configuration, the server uses mock data. To force mock mode even when credentials are available, set `PVR_DATA_MODE=mock`.
 
+## Worktree tasks with Herdr
+
+Launch the repo session from a normal terminal with `just herdr`. Inside Herdr:
+
+```sh
+just herdr-task design/typography --agent codex --issue 1
+```
+
+Each task gets an isolated worktree, dependencies, and mock Next.js preview on
+its own port. Supply `--prompt`, `--prompt-file`, or `--issue` to start an agent;
+finish from the task's workspace with `just herdr-done`. Commit the helpers
+before creating tasks so the base revision includes them.
+
+See [Herdr worktree tasks](docs/herdr.md) for options, iPad preview URLs, and cleanup.
+
 ## Home Assistant and 1Password
 
 The configured broadcast uses:
