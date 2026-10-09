@@ -41,6 +41,17 @@ export const MOCK_TRACKS: NowPlaying[] = [
     catalog: "DEAD OCEANS / DOC153",
     trackNumber: "B5",
   },
+  {
+    id: "pvr-long-title-preview",
+    title: "A Song Title That Keeps Going Until You Can Read the Very Last Word",
+    artist: "Public Vinyl Radio",
+    album: "Typography Preview",
+    artwork: "/artwork/con-todo-el-mundo.jpg",
+    source: "vinyl",
+    state: "playing",
+    duration: 410,
+    position: 142,
+  },
 ];
 
 export function mockTrack(index: number, now = Date.now()): NowPlaying {

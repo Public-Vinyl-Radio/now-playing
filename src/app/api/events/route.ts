@@ -1,4 +1,4 @@
-import { mockTrack } from "@/lib/mock-data";
+import { MOCK_TRACKS, mockTrack } from "@/lib/mock-data";
 import { WAITING_TRACK, type BroadcastSnapshot } from "@/lib/broadcast";
 import { dataMode } from "@/server/config";
 import { getHomeAssistant } from "@/server/home-assistant";
@@ -36,7 +36,7 @@ export function GET(request: Request) {
       write("retry: 2000\n\n");
       if (mode === "mock") {
         const index = Number(query.get("preview") ?? 0);
-        send({ mode: "mock", connection: "connected", nowPlaying: mockTrack(Number.isInteger(index) && index >= 0 && index < 3 ? index : 0), receivedAt: Date.now() });
+        send({ mode: "mock", connection: "connected", nowPlaying: mockTrack(Number.isInteger(index) && index >= 0 && index < MOCK_TRACKS.length ? index : 0), receivedAt: Date.now() });
       } else {
         const { bridge, error } = getHomeAssistant();
         if (bridge) unsubscribe = bridge.subscribe(send);

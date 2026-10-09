@@ -85,6 +85,7 @@ export function SettingsPanel({ preferences, onChange, onClose, preview, onPrevi
         {snapshot.mode === "mock" && <label className="select-field">Preview transmission
           <select value={preview} onChange={(e) => onPreview(Number(e.target.value))}>
             <option value="0">Friday Morning · vinyl with timing</option><option value="1">Maria También · streaming</option><option value="2">Friday Morning · vinyl without timing</option>
+            <option value="3">Long song title · typography preview</option>
           </select>
         </label>}
       </section>
