@@ -1,3 +1,5 @@
+import { METADATA_FIELDS, registeredFont } from "./fonts.ts";
+
 export type ColorProfile = "warm" | "green" | "amber" | "mono";
 
 export interface VisualPreferences {
@@ -11,6 +13,13 @@ export interface VisualPreferences {
   renderScale: number;
   fps: number;
   motion: boolean;
+  showArtwork: boolean;
+  artistFont: string;
+  titleFont: string;
+  albumFont: string;
+  artistSize: number;
+  titleSize: number;
+  albumSize: number;
 }
 
 export const STORAGE_KEY = "pvr.analog.preferences.v1";
@@ -25,6 +34,13 @@ export const DEFAULT_PREFERENCES: VisualPreferences = {
   renderScale: 0.85,
   fps: 30,
   motion: true,
+  showArtwork: true,
+  artistFont: "dm-mono",
+  titleFont: "dm-mono",
+  albumFont: "dm-mono",
+  artistSize: 36,
+  titleSize: 96,
+  albumSize: 36,
 };
 
 export const PARAMETER_RANGES = {
@@ -36,6 +52,9 @@ export const PARAMETER_RANGES = {
   glitches: [0, 1],
   renderScale: [0.5, 1],
   fps: [15, 60],
+  artistSize: [24, 64],
+  titleSize: [48, 144],
+  albumSize: [24, 64],
 } as const;
 
 export function sanitizePreferences(input: unknown): VisualPreferences {
@@ -53,6 +72,12 @@ export function sanitizePreferences(input: unknown): VisualPreferences {
     result.colorProfile = value.colorProfile as ColorProfile;
   }
   if (typeof value.motion === "boolean") result.motion = value.motion;
+  if (typeof value.showArtwork === "boolean") result.showArtwork = value.showArtwork;
+  for (const field of METADATA_FIELDS) {
+    const key = `${field}Font` as const;
+    const font = registeredFont(value[key]);
+    if (font) result[key] = font.id;
+  }
   return result;
 }
 
