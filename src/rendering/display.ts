@@ -178,7 +178,8 @@ export class AnalogDisplay {
 
   setTrack(track: NowPlaying, broadcastLabel = this.broadcastLabel) {
     const previous = this.track;
-    const changed = trackIdentity(track) !== trackIdentity(previous) || track.state !== previous.state || track.source !== previous.source || track.duration !== previous.duration;
+    const changed = trackIdentity(track) !== trackIdentity(previous) || track.state !== previous.state || track.source !== previous.source || track.duration !== previous.duration
+      || track.year !== previous.year || track.label !== previous.label || track.catalog !== previous.catalog || track.trackNumber !== previous.trackNumber;
     const labelChanged = broadcastLabel !== this.broadcastLabel;
     this.track = track;
     this.broadcastLabel = broadcastLabel;

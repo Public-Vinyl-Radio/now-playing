@@ -10,6 +10,7 @@ export interface NowPlaying {
   position?: number;
   positionUpdatedAt?: number;
   year?: string;
+  label?: string;
   catalog?: string;
   trackNumber?: string;
 }

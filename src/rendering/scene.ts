@@ -147,7 +147,8 @@ export class NowPlayingScene {
     const catalogY = artY + artSize + 22 * s;
     const year = this.text(this.track.year ?? "", artX + artSize, catalogY, 24 * s, { color: C.muted, align: "right" });
     const catalogWidth = artSize - (this.track.year ? year.width + 16 * s : 0);
-    const catalog = fitMetadata(this.track.catalog ?? "PUBLIC VINYL RADIO", 24 * s, 24 * s, catalogWidth, 62.4 * s,
+    const release = [this.track.label, this.track.catalog].filter(Boolean).join(" / ") || "PUBLIC VINYL RADIO";
+    const catalog = fitMetadata(release, 24 * s, 24 * s, catalogWidth, 62.4 * s,
       (text, fontSize) => CanvasTextMetrics.measureText(text, new TextStyle({
         fontFamily: "DM Mono", fontSize, letterSpacing: 0.6 * s, lineHeight: fontSize * 1.3,
         wordWrap: true, wordWrapWidth: catalogWidth, breakWords: true,

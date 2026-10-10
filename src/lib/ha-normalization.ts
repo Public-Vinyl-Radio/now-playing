@@ -27,6 +27,11 @@ function number(value: unknown, minimum: number): number | undefined {
   return typeof value === "number" && Number.isFinite(value) && value >= minimum ? value : undefined;
 }
 
+function releaseYear(value: unknown): string | undefined {
+  const year = typeof value === "number" && Number.isInteger(value) ? String(value) : text(value);
+  return year && /^[1-9]\d{3}$/.test(year) ? year : undefined;
+}
+
 export function normalizeHA(player: HAEntity | undefined, sensor: HAEntity | undefined, artwork?: string): NowPlaying {
   const a = player?.attributes ?? {};
   const title = text(a.media_title), artist = text(a.media_artist), album = text(a.media_album_name);
@@ -37,6 +42,8 @@ export function normalizeHA(player: HAEntity | undefined, sensor: HAEntity | und
   const id = createHash("sha256").update(JSON.stringify([text(a.media_content_id), title, artist, album])).digest("hex").slice(0, 24);
   return {
     id, title, artist, album, artwork, state, source: detectSource(sensor),
+    year: releaseYear(a.year),
+    label: text(a.label),
     duration: number(a.media_duration, Number.MIN_VALUE),
     position: number(a.media_position, 0),
     positionUpdatedAt: Number.isFinite(updated) ? updated : undefined,
