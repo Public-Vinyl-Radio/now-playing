@@ -26,3 +26,26 @@ test("Retina and large displays obey the render target pixel budget", () => {
     assert.ok(resolution <= Math.min(dpr, 2));
   }
 });
+
+test("older saved preferences gain appearance defaults without losing picture settings", () => {
+  const preferences = sanitizePreferences({ bloom: 0.6, colorProfile: "green", motion: false });
+  assert.equal(preferences.bloom, 0.6);
+  assert.equal(preferences.colorProfile, "green");
+  assert.equal(preferences.showArtwork, true);
+  assert.equal(preferences.titleFont, "dm-mono");
+  assert.equal(preferences.titleSize, 96);
+});
+
+test("appearance values persist safely and unknown fonts fall back per field", () => {
+  const preferences = sanitizePreferences(JSON.parse(JSON.stringify({
+    ...DEFAULT_PREFERENCES, showArtwork: false, titleFont: "libre-caslon-display", artistFont: "removed-font",
+    artistSize: -10, titleSize: 1000, albumSize: NaN,
+  })));
+  assert.equal(preferences.showArtwork, false);
+  assert.equal(preferences.titleFont, "libre-caslon-display");
+  assert.equal(preferences.artistFont, "dm-mono");
+  assert.equal(preferences.artistSize, 24);
+  assert.equal(preferences.titleSize, 144);
+  assert.equal(preferences.albumSize, 36);
+  assert.equal(sanitizePreferences({ showArtwork: "false", titleFont: {} }).showArtwork, true);
+});

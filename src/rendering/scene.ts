@@ -2,6 +2,8 @@ import { CanvasTextMetrics, Container, Graphics, Sprite, Text, TextStyle, Textur
 import { formatTime, playbackPosition, type NowPlaying } from "../lib/now-playing";
 import { ProceduralSignal, type SignalSource } from "./signal";
 import { fitMetadata, marqueeOffset } from "./metadata";
+import { DEFAULT_PREFERENCES, type VisualPreferences } from "../lib/preferences";
+import { FALLBACK_FONTS, type MetadataFonts } from "../lib/fonts";
 
 const C = { background: 0x121511, ivory: 0xf0e7ce, muted: 0x969b85, amber: 0xd9a361, green: 0xa8b797, rule: 0x42483b };
 
@@ -23,6 +25,8 @@ export class NowPlayingScene {
   private scale = 1;
   private broadcastLabel = "CONNECTING";
   private titleMotion = true;
+  private preferences = DEFAULT_PREFERENCES;
+  private fonts = FALLBACK_FONTS;
   private titleMarquee?: { content: Container; chunks: Text[]; distance: number; startedAt?: number };
 
   constructor(track: NowPlaying, private artwork?: Texture, private logo?: Texture, private signal: SignalSource = new ProceduralSignal()) {
@@ -30,6 +34,15 @@ export class NowPlayingScene {
   }
 
   setBroadcastLabel(label: string) { this.broadcastLabel = label; }
+
+  setAppearance(preferences: VisualPreferences, fonts: MetadataFonts, width: number, height: number) {
+    const changed = preferences.showArtwork !== this.preferences.showArtwork
+      || preferences.artistSize !== this.preferences.artistSize || preferences.titleSize !== this.preferences.titleSize
+      || preferences.albumSize !== this.preferences.albumSize || fonts !== this.fonts;
+    this.preferences = preferences;
+    this.fonts = fonts;
+    if (changed && width > 0 && height > 0) this.layout(width, height);
+  }
 
   setTitleMotion(enabled: boolean, width: number, height: number) {
     if (enabled === this.titleMotion) return;
@@ -48,12 +61,12 @@ export class NowPlayingScene {
     if (rebuild) this.layout(width, height);
   }
 
-  private text(value: string, x: number, y: number, size: number, options: { color?: number; serif?: boolean; spacing?: number; width?: number; align?: "left" | "right"; lineHeight?: number } = {}) {
+  private text(value: string, x: number, y: number, size: number, options: { color?: number; serif?: boolean; family?: string[]; spacing?: number; width?: number; align?: "left" | "right"; lineHeight?: number } = {}) {
     const text = new Text({
       text: value,
       resolution: 2,
       style: {
-        fontFamily: options.serif ? "Libre Caslon Display" : "DM Mono",
+        fontFamily: options.family ?? (options.serif ? ["Libre Caslon Display", "serif"] : ["DM Mono", "monospace"]),
         fontSize: size,
         fill: options.color ?? C.ivory,
         letterSpacing: options.spacing ?? 0,
@@ -69,10 +82,10 @@ export class NowPlayingScene {
     return text;
   }
 
-  private metadata(value: string, size: number, minimumSize: number, maxHeight: number, spacing = 0) {
+  private metadata(value: string, size: number, minimumSize: number, maxHeight: number, spacing = 0, family = ["DM Mono", "monospace"]) {
     return fitMetadata(value, size, minimumSize, this.rightWidth, maxHeight, (text, fontSize) =>
       CanvasTextMetrics.measureText(text, new TextStyle({
-        fontFamily: "DM Mono", fontSize, letterSpacing: spacing,
+        fontFamily: family, fontSize, letterSpacing: spacing,
         wordWrap: true, wordWrapWidth: this.rightWidth, breakWords: true, lineHeight: fontSize * 1.15,
       })));
   }
@@ -130,55 +143,63 @@ export class NowPlayingScene {
     const artY = headerY + 69 * s;
     const artSize = portrait ? Math.min(width - safe * 2, height * 0.35) : Math.min(width * 0.4, height * 0.56);
     const artX = portrait ? (width - artSize) / 2 : safe;
-    if (this.artwork) {
-      const sprite = new Sprite(this.artwork);
-      sprite.position.set(artX, artY);
-      sprite.width = artSize;
-      sprite.height = artSize;
-      this.container.addChild(sprite);
-    } else {
-      const fallback = new Graphics().rect(artX, artY, artSize, artSize).fill(0x23291f);
-      for (let r = artSize * 0.44; r > artSize * 0.08; r -= artSize * 0.035) {
-        fallback.circle(artX + artSize / 2, artY + artSize / 2, r).stroke({ color: C.muted, alpha: 0.25, width: s });
+    const showArtwork = this.preferences.showArtwork;
+    if (showArtwork) {
+      if (this.artwork) {
+        const sprite = new Sprite(this.artwork);
+        sprite.position.set(artX, artY);
+        sprite.width = artSize;
+        sprite.height = artSize;
+        this.container.addChild(sprite);
+      } else {
+        const fallback = new Graphics().rect(artX, artY, artSize, artSize).fill(0x23291f);
+        for (let r = artSize * 0.44; r > artSize * 0.08; r -= artSize * 0.035) {
+          fallback.circle(artX + artSize / 2, artY + artSize / 2, r).stroke({ color: C.muted, alpha: 0.25, width: s });
+        }
+        this.container.addChild(fallback);
+        this.text("PVR", artX + artSize * 0.37, artY + artSize * 0.43, artSize * 0.13, { serif: true });
       }
-      this.container.addChild(fallback);
-      this.text("PVR", artX + artSize * 0.37, artY + artSize * 0.43, artSize * 0.13, { serif: true });
+      const catalogY = artY + artSize + 22 * s;
+      const year = this.text(this.track.year ?? "", artX + artSize, catalogY, 24 * s, { color: C.muted, align: "right" });
+      const catalogWidth = artSize - (this.track.year ? year.width + 16 * s : 0);
+      const release = [this.track.label, this.track.catalog].filter(Boolean).join(" / ") || "PUBLIC VINYL RADIO";
+      const catalog = fitMetadata(release, 24 * s, 24 * s, catalogWidth, 62.4 * s,
+        (text, fontSize) => CanvasTextMetrics.measureText(text, new TextStyle({
+          fontFamily: ["DM Mono", "monospace"], fontSize, letterSpacing: 0.6 * s, lineHeight: fontSize * 1.3,
+          wordWrap: true, wordWrapWidth: catalogWidth, breakWords: true,
+        })));
+      this.text(catalog.value, artX, catalogY, catalog.size, { color: C.muted, spacing: 0.6 * s, width: catalogWidth });
     }
-    const catalogY = artY + artSize + 22 * s;
-    const year = this.text(this.track.year ?? "", artX + artSize, catalogY, 24 * s, { color: C.muted, align: "right" });
-    const catalogWidth = artSize - (this.track.year ? year.width + 16 * s : 0);
-    const release = [this.track.label, this.track.catalog].filter(Boolean).join(" / ") || "PUBLIC VINYL RADIO";
-    const catalog = fitMetadata(release, 24 * s, 24 * s, catalogWidth, 62.4 * s,
-      (text, fontSize) => CanvasTextMetrics.measureText(text, new TextStyle({
-        fontFamily: "DM Mono", fontSize, letterSpacing: 0.6 * s, lineHeight: fontSize * 1.3,
-        wordWrap: true, wordWrapWidth: catalogWidth, breakWords: true,
-      })));
-    this.text(catalog.value, artX, catalogY, catalog.size, { color: C.muted, spacing: 0.6 * s, width: catalogWidth });
 
-    this.rightX = portrait ? safe : artX + artSize + 78 * s;
+    this.rightX = !showArtwork || portrait ? safe : artX + artSize + 78 * s;
     this.rightWidth = width - safe - this.rightX;
-    const metadataY = portrait ? artY + artSize + 79 * s : artY + 13 * s;
+    const metadataY = showArtwork && portrait ? artY + artSize + 79 * s : artY + 13 * s;
     const sourceLabel = this.track.source === "streaming" ? "STREAMING / DIGITAL TRANSMISSION" : "NOW PLAYING";
     const source = this.track.source === "vinyl" ? undefined
       : this.text(sourceLabel, this.rightX, metadataY, 12 * s, { color: C.amber, spacing: 1 * s, width: this.rightWidth });
     const footerY = height - Math.max(91 * s, height * 0.09);
     const metadataTop = Math.max(metadataY + 31 * s, source ? source.y + source.height + 24 * s : 0);
     // Reserve room for track, progress, signal and clock before the footer.
-    const metadataHeight = Math.max(0, footerY - 262 * s - metadataTop);
-    const secondaryHeight = Math.min(86.4 * s, metadataHeight * 0.24);
-    const artist = this.metadata((this.track.artist ?? "").toUpperCase(), 36 * s, 32 * s, secondaryHeight, 3 * s);
-    const album = this.metadata(this.track.album ?? "", 36 * s, 32 * s, secondaryHeight);
+    const releaseValue = showArtwork ? "" : [this.track.label, this.track.catalog, this.track.year].filter(Boolean).join(" / ");
+    const release = this.metadata(releaseValue, 24 * s, 24 * s, 62.4 * s, 0.6 * s);
+    const releaseSpace = release.height + (release.value ? 20 * s : 0);
+    const metadataHeight = Math.max(0, footerY - 262 * s - metadataTop - releaseSpace);
+    const artistSize = this.preferences.artistSize * s;
+    const albumSize = this.preferences.albumSize * s;
+    const titleSize = this.preferences.titleSize * s;
+    const artist = this.metadata((this.track.artist ?? "").toUpperCase(), artistSize, Math.min(artistSize, 32 * s), Math.min(artistSize * 2.4, metadataHeight * 0.24), 3 * s, this.fonts.artist);
+    const album = this.metadata(this.track.album ?? "", albumSize, Math.min(albumSize, 32 * s), Math.min(albumSize * 2.4, metadataHeight * 0.24), 0, this.fonts.album);
     const titleGap = artist.value && this.track.title ? 16 * s : 0;
     const albumGap = album.value && (artist.value || this.track.title) ? 24 * s : 0;
     const titleValue = this.track.title ?? "";
     const titleHeight = Math.max(0, metadataHeight - artist.height - album.height - titleGap - albumGap);
-    const fullSizeTitle = this.metadata(titleValue, 96 * s, 96 * s, titleHeight);
-    const title = fullSizeTitle.value ? fullSizeTitle : this.metadata(titleValue, 96 * s, 56 * s, titleHeight);
-    const marqueeHeight = 96 * s * 1.15;
+    const fullSizeTitle = this.metadata(titleValue, titleSize, titleSize, titleHeight, 0, this.fonts.title);
+    const title = fullSizeTitle.value === titleValue ? fullSizeTitle : this.metadata(titleValue, titleSize, Math.min(titleSize, 56 * s), titleHeight, 0, this.fonts.title);
+    const marqueeHeight = titleSize * 1.15;
     const scrollTitle = this.titleMotion && titleValue.length > 0 && fullSizeTitle.value !== titleValue && marqueeHeight <= titleHeight;
     let metadataBottom = metadataTop;
     if (artist.value) {
-      this.text(artist.value, this.rightX, metadataBottom, artist.size, { spacing: 3 * s, width: this.rightWidth, lineHeight: artist.size * 1.15 });
+      this.text(artist.value, this.rightX, metadataBottom, artist.size, { family: this.fonts.artist, spacing: 3 * s, width: this.rightWidth, lineHeight: artist.size * 1.15 });
       metadataBottom += artist.height;
     }
     if (scrollTitle) {
@@ -199,7 +220,7 @@ export class NowPlayingScene {
       const chunks: Text[] = [];
       let length = 0;
       for (let index = 0; index < characters.length; index += 20) {
-        const chunk = this.text(characters.slice(index, index + 20).join(""), length, 0, 96 * s, { lineHeight: marqueeHeight });
+        const chunk = this.text(characters.slice(index, index + 20).join(""), length, 0, titleSize, { family: this.fonts.title, lineHeight: marqueeHeight });
         content.addChild(chunk);
         length += chunk.width;
         chunks.push(chunk);
@@ -208,15 +229,21 @@ export class NowPlayingScene {
       metadataBottom += slotHeight;
     } else if (title.value) {
       metadataBottom += titleGap;
-      this.text(title.value, this.rightX, metadataBottom, title.size, { width: this.rightWidth, lineHeight: title.size * 1.15 });
+      this.text(title.value, this.rightX, metadataBottom, title.size, { family: this.fonts.title, width: this.rightWidth, lineHeight: title.size * 1.15 });
       metadataBottom += title.height;
     }
     if (album.value) {
       metadataBottom += albumGap;
-      this.text(album.value, this.rightX, metadataBottom, album.size, { color: C.muted, width: this.rightWidth, lineHeight: album.size * 1.15 });
+      this.text(album.value, this.rightX, metadataBottom, album.size, { family: this.fonts.album, color: C.muted, width: this.rightWidth, lineHeight: album.size * 1.15 });
       metadataBottom += album.height;
     }
-    this.text(this.track.trackNumber ? `TRACK ${this.track.trackNumber}` : "", this.rightX, metadataBottom + 18 * s, 24 * s, { color: C.muted, spacing: 1.4 * s });
+    if (release.value) {
+      metadataBottom += 20 * s;
+      this.text(release.value, this.rightX, metadataBottom, release.size, { color: C.muted, spacing: 0.6 * s, width: this.rightWidth, lineHeight: release.size * 1.15 });
+      metadataBottom += release.height;
+    }
+    const trackNumber = this.metadata(this.track.trackNumber ? `TRACK ${this.track.trackNumber}` : "", 24 * s, 24 * s, 31.2 * s, 1.4 * s);
+    this.text(trackNumber.value, this.rightX, metadataBottom + 18 * s, trackNumber.size, { color: C.muted, spacing: 1.4 * s, width: this.rightWidth, lineHeight: trackNumber.size * 1.15 });
 
     this.progressY = metadataBottom + 108 * s;
     this.elapsedText = this.text("", this.rightX, this.progressY - 36 * s, 24 * s, { color: C.green });

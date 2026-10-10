@@ -166,6 +166,9 @@ Only the metadata stream and restricted artwork endpoint are exposed. Cross-site
 
 ## Early iPad visual check
 
+See [broadcast appearance and local fonts](docs/appearance.md) for artwork
+visibility, per-field typography controls, and font registration instructions.
+
 1. Open the prototype in Safari in landscape orientation. After deployment, use `https://now-playing.home.arpa`.
 2. Use Safari's Share menu → **Add to Home Screen**, then open PVR Analog from the Home Screen. The manifest, app icons, and Apple standalone metadata are included. Orientation remains a browser/OS decision.
 3. Check title readability from your normal listening position, artwork color, curved screen edges, and fine scanline spacing. Important content has an inset safe area even at maximum curvature.
