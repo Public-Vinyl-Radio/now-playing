@@ -118,7 +118,7 @@ export function BroadcastDisplay() {
   const track = snapshot.nowPlaying;
   return <main className="broadcast-shell">
     <div className="picture-host" ref={host} />
-    <div className="sr-only" role="img" aria-label={`Public Vinyl Radio ${snapshot.mode === "mock" ? "mock" : "live"} broadcast. ${track.state}. ${[track.title, track.artist, track.album].filter(Boolean).join(". ")}. Source: ${track.source}. Procedural signal visualization.`} />
+    <div className="sr-only" role="img" aria-label={`Public Vinyl Radio ${snapshot.mode === "mock" ? "mock" : "live"} broadcast. ${track.state}. ${[track.title, track.artist, track.album, track.label, track.year].filter(Boolean).join(". ")}. Source: ${track.source}. Procedural signal visualization.`} />
     {!ready && !error && <div className="startup-screen"><span className="startup-logo">PVR</span><span className="eyebrow">ESTABLISHING PICTURE SIGNAL</span></div>}
     {error && <div className="signal-error" role="alert"><span className="eyebrow">PVR / SIGNAL LOST</span><p>{error}</p><button onClick={() => setRevision((value) => value + 1)}>Restore picture</button></div>}
     {artworkError && settingsOpen && <p className="artwork-notice" role="status">Artwork unavailable. Showing the station sleeve.</p>}

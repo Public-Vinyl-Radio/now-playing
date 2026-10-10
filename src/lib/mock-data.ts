@@ -12,7 +12,8 @@ export const MOCK_TRACKS: NowPlaying[] = [
     duration: 410,
     position: 142,
     year: "2018",
-    catalog: "DEAD OCEANS / DOC153",
+    label: "DEAD OCEANS",
+    catalog: "DOC153",
     trackNumber: "B5",
   },
   {
@@ -26,7 +27,8 @@ export const MOCK_TRACKS: NowPlaying[] = [
     duration: 190,
     position: 38,
     year: "2018",
-    catalog: "DEAD OCEANS / DOC153",
+    label: "DEAD OCEANS",
+    catalog: "DOC153",
     trackNumber: "A3",
   },
   {
@@ -38,7 +40,8 @@ export const MOCK_TRACKS: NowPlaying[] = [
     source: "vinyl",
     state: "playing",
     year: "2018",
-    catalog: "DEAD OCEANS / DOC153",
+    label: "DEAD OCEANS",
+    catalog: "DOC153",
     trackNumber: "B5",
   },
   {

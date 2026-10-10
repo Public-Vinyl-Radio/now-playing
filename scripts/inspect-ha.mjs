@@ -18,7 +18,7 @@ for (const entity of [process.env.HA_MEDIA_PLAYER_ENTITY_ID, process.env.HA_VINY
       const url = new URL(a.entity_picture, base);
       artwork = { origin: url.origin, path: url.pathname, queryFields: [...url.searchParams.keys()] };
     } catch { /* Missing artwork is normal. */ }
-    console.log(JSON.stringify({ entity, state: data.state, attributeNames: Object.keys(a), title: a.media_title, artist: a.media_artist, album: a.media_album_name, duration: a.media_duration, position: a.media_position, artwork }));
+    console.log(JSON.stringify({ entity, state: data.state, attributeNames: Object.keys(a), title: a.media_title, artist: a.media_artist, album: a.media_album_name, label: a.label, year: a.year, duration: a.media_duration, position: a.media_position, artwork }));
   } catch (error) {
     console.error(JSON.stringify({ entity, error: error.cause?.code ?? error.code ?? 'CONNECTION_FAILED' }));
   }

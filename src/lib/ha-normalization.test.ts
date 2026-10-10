@@ -30,6 +30,34 @@ test("HA metadata and timestamps normalize without exposing upstream access para
   assert.ok(!JSON.stringify(model).includes("private-"));
 });
 
+test("release year and record label normalize from the selected media player's attributes", () => {
+  for (const year of [2018, "2018", " 2018 "]) {
+    const model = normalizeHA({ ...player, attributes: { ...player.attributes, year, label: " Dead Oceans " } }, sensor("on"));
+    assert.equal(model.year, "2018");
+    assert.equal(model.label, "Dead Oceans");
+  }
+});
+
+test("missing and malformed release metadata stays absent", () => {
+  for (const year of [undefined, null, "", " ", 0, "0", "0000", -2018, 2018.5, NaN, Infinity, true, {}, "unknown", "2018-01-01"]) {
+    assert.equal(normalizeHA({ ...player, attributes: { year } }, sensor("on")).year, undefined);
+  }
+  for (const label of [undefined, null, "", " ", 42, true, {}, []]) {
+    assert.equal(normalizeHA({ ...player, attributes: { label } }, sensor("on")).label, undefined);
+  }
+});
+
+test("release metadata clears on a new track and updates without changing track identity", () => {
+  const before = normalizeHA({ ...player, attributes: { ...player.attributes, year: 2018, label: "Dead Oceans" } }, sensor("on"));
+  const updated = normalizeHA({ ...player, attributes: { ...player.attributes, year: 2019, label: "Night Time Stories" } }, sensor("on"));
+  assert.equal(trackIdentity(before), trackIdentity(updated));
+  assert.equal(updated.year, "2019");
+  assert.equal(updated.label, "Night Time Stories");
+  const next = normalizeHA({ ...player, attributes: { media_title: "Next Track" } }, sensor("on"));
+  assert.equal(next.year, undefined);
+  assert.equal(next.label, undefined);
+});
+
 test("idle, stopped, unavailable, and removed entities are handled explicitly", () => {
   for (const state of ["idle", "off", "standby"]) assert.equal(normalizeHA({ ...player, state }, sensor("off")).state, "idle");
   assert.equal(normalizeHA({ ...player, state: "paused" }, sensor("on")).state, "paused");
