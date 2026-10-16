@@ -3,6 +3,7 @@ import { WAITING_TRACK, type BroadcastSnapshot } from "@/lib/broadcast";
 import { dataMode } from "@/server/config";
 import { getHomeAssistant } from "@/server/home-assistant";
 import { sameOriginRequest } from "@/server/request-policy";
+import { isRoomId } from "@/lib/rooms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
 export function GET(request: Request) {
   if (!sameOriginRequest(request)) return new Response("Forbidden", { status: 403 });
   const query = new URL(request.url).searchParams;
+  const room = query.get("room") ?? "living-room";
+  if (!isRoomId(room)) return new Response("Unknown room", { status: 404 });
   const mode = query.get("mode") === "mock" ? "mock" : dataMode();
   const encoder = new TextEncoder();
   let cleanup = () => {};
@@ -38,7 +41,7 @@ export function GET(request: Request) {
         const index = Number(query.get("preview") ?? 0);
         send({ mode: "mock", connection: "connected", nowPlaying: mockTrack(Number.isInteger(index) && index >= 0 && index < MOCK_TRACKS.length ? index : 0), receivedAt: Date.now() });
       } else {
-        const { bridge, error } = getHomeAssistant();
+        const { bridge, error } = getHomeAssistant(room);
         if (bridge) unsubscribe = bridge.subscribe(send);
         else send({ mode: "homeassistant", connection: "unconfigured", nowPlaying: { ...WAITING_TRACK }, message: error, receivedAt: Date.now() });
       }

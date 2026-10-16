@@ -37,7 +37,7 @@ export class ArtworkStore {
         this.sources.delete(oldest);
         this.cache.delete(oldest);
       }
-      return `/api/artwork?key=${key}`;
+      return `/api/artwork?key=${key}${this.config.roomId ? `&room=${this.config.roomId}` : ""}`;
     } catch { return undefined; }
   }
 

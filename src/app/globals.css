@@ -15,6 +15,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .corner-controls { position: absolute; bottom: max(12px, env(safe-area-inset-bottom)); right: max(18px, env(safe-area-inset-right)); display: flex; gap: 2px; }
 .corner-button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); opacity: 0.35; transition: opacity 160ms; }
 .corner-button:hover, .corner-button:focus-visible { opacity: 1; }
+.listening-controls { position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: max(28px, env(safe-area-inset-left)); right: 125px; display: flex; align-items: center; gap: 14px; min-height: 36px; color: var(--ivory); font-size: 11px; }
+.room-select select { min-height: 40px; padding: 8px 28px 8px 10px; border: 1px solid var(--rule); border-radius: 2px; color: var(--ivory); background: #121511e6; font-size: 11px; }
+.air-indicator { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--rule); }
+.air-indicator.on-air { background: var(--amber); box-shadow: 0 0 8px #d9a36155; }
+.listen-button { min-height: 40px; padding: 8px 0; border: 0; background: transparent; color: var(--ivory); white-space: nowrap; }
+.listen-button:disabled { color: var(--muted); cursor: default; }
+.listen-status { color: var(--muted); font-size: 10px; line-height: 1.5; }
+@media (max-width: 680px) { .listening-controls { left: 16px; gap: 9px; flex-wrap: wrap; } .listen-status { flex-basis: 100%; } }
 .startup-screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; background: var(--background); }
 .startup-logo { font-family: 'Libre Caslon Display', serif; font-size: 96px; }
 .eyebrow { display: block; color: var(--amber); font-size: 10px; line-height: 1.5; letter-spacing: 2px; }

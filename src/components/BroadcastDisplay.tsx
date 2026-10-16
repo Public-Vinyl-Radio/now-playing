@@ -5,8 +5,10 @@ import { useBroadcast } from "@/hooks/useBroadcast";
 import { DEFAULT_PREFERENCES, sanitizePreferences, STORAGE_KEY, type VisualPreferences } from "@/lib/preferences";
 import type { AnalogDisplay, DisplayStats } from "@/rendering/display";
 import { SettingsPanel } from "./SettingsPanel";
+import { ListeningControls } from "./ListeningControls";
+import { isRoomId, ROOMS, type RoomId } from "@/lib/rooms";
 
-export function BroadcastDisplay() {
+export function BroadcastDisplay({ initialRoom }: { initialRoom?: RoomId }) {
   const host = useRef<HTMLDivElement>(null);
   const display = useRef<AnalogDisplay | null>(null);
   const [preferences, setPreferences] = useState<VisualPreferences>(DEFAULT_PREFERENCES);
@@ -16,10 +18,12 @@ export function BroadcastDisplay() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [preview, setPreview] = useState(0);
   const [inputMode, setInputMode] = useState<"live" | "mock">("live");
-  const snapshot = useBroadcast(inputMode, preview);
+  const [room, setRoom] = useState<RoomId>(initialRoom ?? "living-room");
+  const snapshot = useBroadcast(inputMode, preview, room);
   const trackRef = useRef(snapshot.nowPlaying);
   trackRef.current = snapshot.nowPlaying;
-  const broadcastLabel = snapshot.mode === "mock" ? "MOCK BROADCAST" : snapshot.connection === "connected" ? "HOME ASSISTANT" : snapshot.connection.toUpperCase();
+  const roomName = ROOMS.find(value => value.id === room)!.name;
+  const broadcastLabel = `${roomName.toUpperCase()} / ${snapshot.mode === "mock" ? "MOCK BROADCAST" : snapshot.connection === "connected" ? "LIVE METADATA" : snapshot.connection.toUpperCase()}`;
   const broadcastLabelRef = useRef(broadcastLabel);
   broadcastLabelRef.current = broadcastLabel;
   const [revision, setRevision] = useState(0);
@@ -29,6 +33,24 @@ export function BroadcastDisplay() {
   const [stats, setStats] = useState<DisplayStats>();
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!initialRoom) {
+      try { const saved = localStorage.getItem("pvr-room"); if (isRoomId(saved)) setRoom(saved); } catch { /* Use the default room. */ }
+    }
+    const navigate = () => {
+      const value = window.location.pathname.slice(1);
+      if (isRoomId(value)) setRoom(value);
+    };
+    window.addEventListener("popstate", navigate);
+    return () => window.removeEventListener("popstate", navigate);
+  }, [initialRoom]);
+
+  function changeRoom(value: RoomId) {
+    setRoom(value);
+    window.history.replaceState(null, "", `/${value}`);
+    try { localStorage.setItem("pvr-room", value); } catch { /* Selection still works for this visit. */ }
+  }
 
   useEffect(() => {
     try {
@@ -118,10 +140,11 @@ export function BroadcastDisplay() {
   const track = snapshot.nowPlaying;
   return <main className="broadcast-shell">
     <div className="picture-host" ref={host} />
-    <div className="sr-only" role="img" aria-label={`Public Vinyl Radio ${snapshot.mode === "mock" ? "mock" : "live"} broadcast. ${track.state}. ${[track.title, track.artist, track.album, track.label, track.year].filter(Boolean).join(". ")}. Source: ${track.source}. Procedural signal visualization.`} />
+    <div className="sr-only" role="img" aria-label={`Public Vinyl Radio ${roomName} ${snapshot.mode === "mock" ? "mock" : "live"} broadcast. ${track.state}. ${[track.title, track.artist, track.album, track.label, track.year].filter(Boolean).join(". ")}. Source: ${track.source}. Procedural signal visualization.`} />
     {!ready && !error && <div className="startup-screen"><span className="startup-logo">PVR</span><span className="eyebrow">ESTABLISHING PICTURE SIGNAL</span></div>}
     {error && <div className="signal-error" role="alert"><span className="eyebrow">PVR / SIGNAL LOST</span><p>{error}</p><button onClick={() => setRevision((value) => value + 1)}>Restore picture</button></div>}
     {artworkError && settingsOpen && <p className="artwork-notice" role="status">Artwork unavailable. Showing the station sleeve.</p>}
+    <ListeningControls key={`${room}:${snapshot.mode}`} room={room} onRoomChange={changeRoom} mock={snapshot.mode === "mock"} inert={settingsOpen} />
     <div className="corner-controls" inert={settingsOpen ? true : undefined}>
       {fullscreenSupported && <button className="corner-button" aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} onClick={toggleFullscreen}>
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" stroke="currentColor" strokeWidth="1.2" /></svg>
