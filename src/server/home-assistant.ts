@@ -1,14 +1,16 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { isHAEntity, normalizeHA, type HAEntity } from "../lib/ha-normalization";
-import { playbackPosition } from "../lib/now-playing";
-import { WAITING_TRACK, type BroadcastSnapshot } from "../lib/broadcast";
-import { ArtworkStore } from "./artwork";
-import { homeAssistantConfig, type HAConfig } from "./config";
+import { isHAEntity, normalizeHA, type HAEntity } from "../lib/ha-normalization.ts";
+import { playbackPosition } from "../lib/now-playing.ts";
+import { WAITING_TRACK, type BroadcastSnapshot } from "../lib/broadcast.ts";
+import { ArtworkStore } from "./artwork.ts";
+import { homeAssistantConfig, type HAConfig } from "./config.ts";
+import type { RoomId } from "../lib/rooms";
 
 type Listener = (snapshot: BroadcastSnapshot) => void;
 
 export class HomeAssistantBridge {
+  private config: HAConfig;
   readonly artwork: ArtworkStore;
   private player?: HAEntity;
   private sensor?: HAEntity;
@@ -28,7 +30,7 @@ export class HomeAssistantBridge {
   private started = false;
   snapshot: BroadcastSnapshot = { mode: "homeassistant", connection: "connecting", nowPlaying: { ...WAITING_TRACK }, receivedAt: Date.now() };
 
-  constructor(private config: HAConfig) { this.artwork = new ArtworkStore(config); }
+  constructor(config: HAConfig) { this.config = config; this.artwork = new ArtworkStore(config); }
 
   subscribe(listener: Listener) {
     this.listeners.add(listener);
@@ -153,15 +155,16 @@ export class HomeAssistantBridge {
 }
 
 interface BridgeEntry { fingerprint: string; bridge: HomeAssistantBridge }
-const shared = globalThis as typeof globalThis & { __pvrBridge?: BridgeEntry };
+const shared = globalThis as typeof globalThis & { __pvrRooms?: Map<RoomId, BridgeEntry> };
 
-export function getHomeAssistant(): { bridge?: HomeAssistantBridge; error?: string } {
-  const { config, error } = homeAssistantConfig();
+export function getHomeAssistant(room: RoomId = "living-room"): { bridge?: HomeAssistantBridge; error?: string } {
+  const { config, error } = homeAssistantConfig(room);
   if (!config) return { error };
   const fingerprint = createHash("sha256").update(JSON.stringify([config.baseUrl.href, config.playerEntity, config.vinylSensor, config.token, [...config.artworkOrigins], config.reconnectBase, config.reconnectMax])).digest("hex");
-  if (shared.__pvrBridge?.fingerprint !== fingerprint) {
-    shared.__pvrBridge?.bridge.destroy();
-    shared.__pvrBridge = { fingerprint, bridge: new HomeAssistantBridge(config) };
+  const rooms = shared.__pvrRooms ??= new Map();
+  if (rooms.get(room)?.fingerprint !== fingerprint) {
+    rooms.get(room)?.bridge.destroy();
+    rooms.set(room, { fingerprint, bridge: new HomeAssistantBridge(config) });
   }
-  return { bridge: shared.__pvrBridge.bridge };
+  return { bridge: rooms.get(room)!.bridge };
 }

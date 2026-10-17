@@ -1,6 +1,6 @@
 # PVR Analog
 
-A fullscreen CRT now playing display for Public Vinyl Radio. The visual prototype and server-side Home Assistant integration are implemented. It displays your listening-room broadcast; audio playback is controlled elsewhere. Bundled Khruangbin metadata and artwork are available for mock mode.
+A fullscreen CRT now playing display for Public Vinyl Radio, with independent Living Room and Lounge broadcasts and optional live listening. Bundled Khruangbin metadata and artwork are available for mock mode.
 
 ![PVR Analog visual prototype](docs/preview.png)
 
@@ -43,16 +43,28 @@ See [Herdr worktree tasks](docs/herdr.md) for options, iPad preview URLs, and cl
 
 ## Home Assistant and 1Password
 
-The configured broadcast uses:
+The configured broadcasts use:
 
 | Setting | Value |
 | --- | --- |
 | Home Assistant | `https://ha.home.arpa` |
 | Media player | `media_player.living_room_audio` |
 | Vinyl indicator | `binary_sensor.vinyl_listening_active` |
+| Lounge media player | `media_player.lounge_audio` |
+| Lounge vinyl indicator | `binary_sensor.lounge_vinyl_audio_activity` |
 | Token reference | `op://Homelab/Home Assistant Codex Token/token` |
 
 The binary sensor determines the source: **on → vinyl**, **off → streaming**. Missing, unknown, or unavailable sensor states leave the source unknown. Change the entity IDs in server configuration to use another player or sensor.
+
+Use the room selector to switch the picture and audio source together. Each room has its own shared server-side HA bridge and artwork registry; changing rooms never changes playback in the room. The root page restores the last room selected on that browser. `/living-room` and `/lounge` open a particular room directly.
+
+### Listen live
+
+Set the server-only `PVR_AUDIO_BASE_URL` to the private streaming gateway origin, such as `http://vinyl-live-listener:8081` on the shared Docker network. Set `HA_LOUNGE_MEDIA_PLAYER_ENTITY_ID` and `HA_LOUNGE_VINYL_SENSOR_ENTITY_ID` to override the Lounge defaults above. Existing `HA_MEDIA_PLAYER_ENTITY_ID` and `HA_VINYL_SENSOR_ENTITY_ID` continue configuring Living Room.
+
+The room selector shows whether the broadcast is on air, off air, waiting for audio, or unavailable. **Listen live** joins that room's existing MP3 stream; **Stop listening** closes only this browser's connection. Audio starts only after a tap. Changing rooms stops audio and requires another tap to listen. Mock previews stay silent. `/api/streams` reports source availability, and `/pi-cam.mp3` and `/aswitch.mp3` proxy only those two configured audio sources. Opening a page or pressing Listen never starts capture or enables public access.
+
+Enable room broadcasts and **Public Tunnel** in Home Assistant. The same full page can be served at `https://live-stream.saegey.com`, with `/lounge` and `/living-room` as shareable links. The infrastructure streaming gateway routes existing MP3 URLs to the encoder and other read requests to this app. Local listening uses the private gateway and continues when the public tunnel is off. The public display has no publishing controls; credentials and HA access remain server-side.
 
 Install and sign in to the [1Password CLI](https://developer.1password.com/docs/cli/get-started/), then:
 
@@ -105,7 +117,7 @@ The small waveform is explicitly procedural. `SignalSource` is the adapter bound
 
 ## Deploy on the Beelink
 
-This app is intended for LAN and Tailscale access, with **no application authentication**, as agreed. The Compose service publishes its port on host loopback; Caddy is the browser-facing service. Restrict access to Caddy using your existing LAN and tailnet policy.
+The display and listener endpoints have **no application authentication**. They can be served locally through Caddy and publicly through the on-demand streaming tunnel. The public app has no broadcast or tunnel controls. The Compose service publishes its port on host loopback; Caddy is the browser-facing service.
 
 ```sh
 cp .env.example .env
@@ -162,7 +174,7 @@ op run --env-file .env -- docker compose -f compose.yaml -f deploy/compose.caddy
 
 The override mounts only the public certificate read-only and sets [`NODE_EXTRA_CA_CERTS`](https://nodejs.org/download/release/v22.21.0/docs/api/cli.html#node_extra_ca_certsfile). TLS verification remains enabled. If HA uses a different local CA, mount its public root instead.
 
-Only the metadata stream and restricted artwork endpoint are exposed. Cross-site browser requests are rejected; neither endpoint offers Home Assistant controls. LAN and tailnet access policy provides the access boundary, with no application login.
+The metadata, registered artwork, stream availability, and two audio endpoints expose no Home Assistant controls. App API requests reject cross-site browser requests. When the public tunnel is enabled, anyone who can reach its hostname can view metadata and listen to enabled broadcasts.
 
 ## Early iPad visual check
 
