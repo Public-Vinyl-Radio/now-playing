@@ -10,6 +10,7 @@ The artwork belongs to its rights holders. It is included as sample artwork for 
 
 - **DM Mono**, bundled from Google Fonts. SIL Open Font License: [DM-Mono-OFL.txt](fonts/DM-Mono-OFL.txt).
 - **Libre Caslon Display**, bundled from Google Fonts. SIL Open Font License: [Libre-Caslon-Display-OFL.txt](fonts/Libre-Caslon-Display-OFL.txt).
+- **JetBrains Mono**, supplied locally as Regular TTF/WOFF2 and Bold TTF; Bold is registered in the broadcast selector. [Upstream project](https://github.com/JetBrains/JetBrainsMono). SIL Open Font License: [JetBrains-Mono-OFL.txt](fonts/JetBrains-Mono-OFL.txt).
 
 ## Station logo
 

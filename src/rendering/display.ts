@@ -4,6 +4,7 @@ import type { NowPlaying } from "../lib/now-playing";
 import { trackIdentity } from "../lib/now-playing";
 import { NowPlayingScene } from "./scene";
 import { BLOOM_FRAGMENT, CRT_FRAGMENT, FILTER_VERTEX } from "./shaders";
+import { FALLBACK_FONTS, type MetadataFonts } from "../lib/fonts";
 
 export interface DisplayStats { fps: number; width: number; height: number; resolution: number; }
 interface DisplayCallbacks {
@@ -16,6 +17,7 @@ interface DisplayCallbacks {
 export class AnalogDisplay {
   private app = new Application();
   private scene?: NowPlayingScene;
+  private metadataFonts = FALLBACK_FONTS;
   private artwork?: Texture;
   private logo?: Texture;
   private artworkUrl?: string;
@@ -71,6 +73,7 @@ export class AnalogDisplay {
     }
     if (this.disposed) return;
     this.scene = new NowPlayingScene(this.track, this.artwork, this.logo);
+    this.scene.setAppearance(this.preferences, this.metadataFonts, 0, 0);
     this.scene.setBroadcastLabel(this.broadcastLabel);
     this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     this.reducedMotion.addEventListener("change", this.titleMotionChanged);
@@ -150,8 +153,11 @@ export class AnalogDisplay {
     if (this.disposed) return;
     const resize = preferences.renderScale !== this.preferences.renderScale;
     const frequencyChanged = preferences.glitches !== this.preferences.glitches;
+    const artworkChanged = preferences.showArtwork !== this.preferences.showArtwork;
     this.preferences = preferences;
+    this.scene?.setAppearance(preferences, this.metadataFonts, this.width, this.height);
     this.updateTitleMotion();
+    if (artworkChanged) void this.loadArtwork(this.track.artwork);
     if (!this.crt) return;
     const u = this.crt.resources.crtUniforms.uniforms;
     u.uCurvature = preferences.curvature;
@@ -165,6 +171,13 @@ export class AnalogDisplay {
     this.stop();
     this.draw(performance.now());
     this.start();
+  }
+
+  setMetadataFonts(fonts: MetadataFonts) {
+    if (this.disposed) return;
+    this.metadataFonts = fonts;
+    this.scene?.setAppearance(this.preferences, fonts, this.width, this.height);
+    this.draw(performance.now());
   }
 
   private updateTitleMotion() {
@@ -199,7 +212,7 @@ export class AnalogDisplay {
     this.scene.setArtwork(undefined, this.width, this.height);
     this.draw(performance.now());
     old?.destroy(true);
-    if (!url) return;
+    if (!url || !this.preferences.showArtwork) return;
     try {
       const image = new Image();
       image.src = url;
