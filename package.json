@@ -18,12 +18,14 @@
     "pixi.js": "^8.14.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.180.0",
     "typescript": "^5.9.0"
   },
   "engines": {
